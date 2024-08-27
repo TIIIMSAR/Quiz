@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -33,5 +34,12 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
 
     Route::group(['prefix' => '/quiz'], function () {
         Route::post('/create', [QuizController::class, 'store']);
+    });
+
+    Route::group(['prefix' => '/category'], function () {
+        Route::post('', [CategoryController::class, 'store']);
+        Route::get('', [CategoryController::class, 'index']);
+        Route::delete('/{id}', [CategoryController::class, 'destroy']);
+        Route::put('/{id}', [CategoryController::class, 'update']);
     });
 });

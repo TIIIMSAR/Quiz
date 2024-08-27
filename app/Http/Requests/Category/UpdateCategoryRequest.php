@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Quiz;
+namespace App\Http\Requests\Category;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class createQuizRequest extends FormRequest
+class UpdateCategoryRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,12 +22,10 @@ class createQuizRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['required', 'string', 'min:3', 'max:128'],
-            'summery' => ['required', 'string', 'min:8', 'max:128'],
-            'score' => ['required'],
-            'published' => ['required']
+            'name' => ['required', 'string', 'min:3', 'max:128']
         ];
     }
+
 
     protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
     {

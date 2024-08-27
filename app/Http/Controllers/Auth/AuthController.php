@@ -17,9 +17,9 @@ class AuthController extends ApiController
     public function register(CreateUserRequest $request)
     {
       $validated = $request->validated();
-  
+
     //   try {
-          $userId = User::max('id'); 
+          $userId = User::max('id') + 1; 
 
           if ($request->hasFile('image')) {
               $imageName = $this->storePhoto($request->file('image'), $userId);
