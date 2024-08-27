@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -28,5 +29,9 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     Route::group(['prefix' => '/users'], function () {
         Route::get('/{id}', [UserController::class, 'show']);
         Route::put('/{id}', [UserController::class, 'update']);
+    });
+
+    Route::group(['prefix' => '/quiz'], function () {
+        Route::post('/create', [QuizController::class, 'store']);
     });
 });
