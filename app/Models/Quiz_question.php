@@ -14,6 +14,11 @@ class Quiz_question extends Model
     ];
 
 
+    protected $casts = [
+        'options' => 'array',
+    ];
+
+
     const LEVEL_EASY = 1;
     const LEVEL_MEDIUM = 2;
     const LEVEL_HARD = 3;

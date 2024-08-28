@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('content');
             $table->tinyInteger('level');
             $table->tinyInteger('score');
+            $table->boolean('active')->nullable();
+            $table->json('options');
             $table->string('file_path')->nullable();
 
             $table->timestamps();

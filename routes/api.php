@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuizQuestionController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 Route::fallback(function(){
     return response()->json('ادرس درست وارد نشده است');
 });
+
+Route::get('/search', [SearchController::class, 'search'])->middleware('auth:sanctum');
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -34,7 +37,11 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     });
 
     Route::group(['prefix' => '/azmmon'], function () {
+        Route::get('/{id}', [QuizController::class, 'index']);
         Route::post('/create', [QuizController::class, 'store']);
+        Route::post('/config', [QuizController::class, 'config']);
+        Route::post('/generate_url', [QuizController::class, 'regenerateQuizUrl']);
+        Route::post('/expire_url', [QuizController::class, 'expireQuizUrl']);
     });
 
     Route::group(['prefix' => '/category'], function () {
@@ -45,6 +52,12 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     });
 
     Route::group(['prefix' => '/quiz'], function () {
+        Route::get('', [QuizQuestionController::class, 'index']);
         Route::post('', [QuizQuestionController::class, 'makeQuiz']);
+        Route::delete('/{id}', [QuizQuestionController::class, 'destroy']);
+    });
+
+    Route::group(['prefix' => '/quiz'], function () {
+        
     });
 });

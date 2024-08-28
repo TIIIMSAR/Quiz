@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('title');
             $table->string('summary');
             $table->string('url_quiz')->nullable();
-            $table->tinyInteger('score');
+            $table->tinyInteger('score')->default(60);
             $table->tinyInteger('published');
             $table->timestamp('started_at');
             $table->timestamp('finished_at')->nullable();

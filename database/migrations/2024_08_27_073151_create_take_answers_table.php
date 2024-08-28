@@ -24,11 +24,6 @@ return new class extends Migration
             ->onDelete('cascade')
             ->onUpdate('cascade');
 
-            $table->foreignId('option_id')
-            ->constrained()
-            ->onDelete('cascade')
-            ->onUpdate('cascade');
-
             $table->timestamps();
         });
     }
