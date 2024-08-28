@@ -16,7 +16,7 @@ class CategoryController extends ApiController
      public function index()
      {
          try {
-             $categories = Category::where('user_id', Auth::id())->get();
+             $categories = Category::where('owner_id', Auth::id())->get();
              return $this->respondSuccess('دسته‌بندی‌ها با موفقیت دریافت شدند.', $categories);
          } catch (\Exception $e) {
              return $this->respondInternalError('خطایی در دریافت دسته‌بندی‌ها رخ داده است.');
@@ -25,20 +25,20 @@ class CategoryController extends ApiController
  
      public function store(CreateCategoryRequest $request)
      {
-         try {
+        //  try {
              $request->validated();
  
              $category = new Category();
              $category->name = $request->name;
-             $category->user_id = Auth::id(); 
+             $category->owner_id = Auth::id(); 
              $category->save();
  
              return $this->respondCreated('دسته‌بندی با موفقیت ایجاد شد.', $category);
-         } catch (ValidationException $e) {
-             return $this->respondInternalError('اطلاعات وارد شده معتبر نمی‌باشند.');
-         } catch (\Exception $e) {
-             return $this->respondInternalError('خطایی در ایجاد دسته‌بندی رخ داده است.');
-         }
+        //  } catch (ValidationException $e) {
+        //      return $this->respondInternalError('اطلاعات وارد شده معتبر نمی‌باشند.');
+        //  } catch (\Exception $e) {
+        //      return $this->respondInternalError('خطایی در ایجاد دسته‌بندی رخ داده است.');
+        //  }
      }
  
      public function update(UpdateCategoryRequest $request, $id)
@@ -46,7 +46,7 @@ class CategoryController extends ApiController
          try {
              $category = Category::findOrFail($id);
  
-             if ($category->user_id !== Auth::id()) {
+             if ($category->owner_id !== Auth::id()) {
                  return $this->respondInternalError('شما دسترسی به به‌روزرسانی این دسته‌بندی را ندارید.');
              }
  
@@ -70,7 +70,7 @@ class CategoryController extends ApiController
          try {
              $category = Category::findOrFail($id);
  
-             if ($category->user_id !== Auth::id()) {
+             if ($category->owner_id !== Auth::id()) {
                  return $this->respondInternalError('شما دسترسی به حذف این دسته‌بندی را ندارید.');
              }
  

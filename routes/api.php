@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\QuizQuestionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -32,7 +33,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::put('/{id}', [UserController::class, 'update']);
     });
 
-    Route::group(['prefix' => '/quiz'], function () {
+    Route::group(['prefix' => '/azmmon'], function () {
         Route::post('/create', [QuizController::class, 'store']);
     });
 
@@ -41,5 +42,9 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::get('', [CategoryController::class, 'index']);
         Route::delete('/{id}', [CategoryController::class, 'destroy']);
         Route::put('/{id}', [CategoryController::class, 'update']);
+    });
+
+    Route::group(['prefix' => '/quiz'], function () {
+        Route::post('', [QuizQuestionController::class, 'makeQuiz']);
     });
 });
