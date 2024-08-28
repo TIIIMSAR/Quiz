@@ -8,4 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Quiz_config extends Model
 {
     use HasFactory;
+
+    protected $guarded = [
+        'id'
+    ];
 }

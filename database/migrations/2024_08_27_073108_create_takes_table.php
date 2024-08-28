@@ -25,8 +25,8 @@ return new class extends Migration
             ->onDelete('cascade')
             ->onUpdate('cascade');
 
-            $table->tinyInteger('status');
-            $table->tinyInteger('user_score');
+            $table->tinyInteger('status')->nullable();
+            $table->tinyInteger('user_score')->nullable();
 
             $table->timestamp('started_at');
             $table->timestamp('finished_at')->nullable();

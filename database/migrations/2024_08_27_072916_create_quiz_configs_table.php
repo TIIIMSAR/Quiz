@@ -26,7 +26,7 @@ return new class extends Migration
 
             $table->tinyInteger('number_question');
             $table->tinyInteger('level');
-            $table->smallInteger('total_score');
+            $table->smallInteger('total_score')->nullable();
 
             $table->timestamps();
         });
