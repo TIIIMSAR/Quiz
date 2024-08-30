@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Contract\ApiController;
+use App\Http\Requests\Quiz\CreateOptionQuizRequest;
 use App\Http\Requests\Taken\createTakeRequest;
 use App\Http\Requests\Taken\endTakeRequest;
 use App\Http\Requests\Taken\SubmitAnswerRequest;
@@ -45,7 +46,7 @@ class TakeController extends ApiController
 
 
 
-
+// برسی شود
     public function getQuestions(createTakeRequest $request)
     {
         $validated = $request->validated();
@@ -60,34 +61,66 @@ class TakeController extends ApiController
     }
 
     
+public function store(CreateOptionQuizRequest $request)
+{
+    $request->validated();
+    
+    // try {
+        $takeId = $request->input('take_id');
+        $questionId = $request->input('question_id');
+        $takeQuestionId = $request->input('take_question_id');
+        $selectedOption = $request->input('selected_option');
 
-    public function submitAnswer(SubmitAnswerRequest $request)
-    {
-        $validated = $request->validated();
+            //find or create a new    
+        $takeAnswer = Take_answer::firstOrCreate(
+            ['take_id' => $takeId],
+            ['take_question_id' => $takeQuestionId],
+            ['answers' => json_encode([])]
+        );
+        
+        $currentAnswers = $takeAnswer->answers;
 
-        $takeId = $validated['take_id'];
-        $questionId = $validated['question_id'];
-        $answers = $validated['answers'];
-
-        $takeQuestion = Take_question::updateOrCreate([
-            'user_id' => $request->user()->id,
-            'question_id' => $questionId,
-            'take_id' => $takeId,
-        ]);
-
-        foreach ($answers as $answer) {
-            Take_answer ::updateOrCreate([
-                'take_id' => $takeId,
-                'take_question_id' => $takeQuestion->id,
-                'option_id' => $answer,
-            ]);
+            // json_decode => array
+        if (is_string($currentAnswers)) {
+            $currentAnswers = json_decode($currentAnswers, true);
+    
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $currentAnswers = [];
+            }
         }
+                //add new question
+        $currentAnswers[] = [
+            'question_id' => $questionId,
+            'selected_option' => $selectedOption,
+        ];
 
-        return response()->json(['message' => 'پاسخ‌ها با موفقیت ذخیره شد.'], 200);
-    }
+        $takeAnswer->update(['answers' => $currentAnswers]);
 
+        return $this->respondCreated('جواب ابا موفقیت ارسال شد.', $takeAnswer);
 
+    // } catch (\Exception $e) {
+    //     return $this->respondInternalError('خطایی در ثبت پاسخ کاربر به وجود امد', $e);
+    // }
+}
 
+    // function storeAnswer($takeId, $questionId, $selectedOption)
+    // {
+    //     $takeAnswer = Take_answer::firstOrCreate(
+    //         ['take_id' => $takeId],
+    //         ['answers' => json_encode([])]
+    //     );
+    
+    //     $currentAnswers = $takeAnswer->answers;
+    
+    //     $currentAnswers["question_$questionId"] = [
+    //         'question_id' => $questionId,
+    //         'selected_option' => $selectedOption,
+    //     ];
+    
+    //     $takeAnswer->update(['answers' => $currentAnswers]);
+    
+    //     return $takeAnswer;
+    // }
 
     public function endQuiz(endTakeRequest $request)
     {

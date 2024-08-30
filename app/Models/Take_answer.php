@@ -14,6 +14,13 @@ class Take_answer extends Model
         'id'
     ];
 
+    protected $table = 'take_answers';
+
+    protected $fillable = ['take_id', 'answers'];
+
+    protected $casts = [
+        'answers' => 'array', 
+    ];
 
     public function take()
     {
@@ -25,8 +32,5 @@ class Take_answer extends Model
         return $this->belongsTo(Take_question::class, 'take_question_id');
     }
 
-    public function option()
-    {
-        return $this->belongsTo(Option::class, 'option_id');
-    }
+    
 }

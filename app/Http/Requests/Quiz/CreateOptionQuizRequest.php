@@ -22,14 +22,9 @@ class CreateOptionQuizRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id' => 'required|exists:categories,id',
-            'content' => 'required|string',
-            'level' => 'required|integer',
-            'score' => 'required|integer',
-            'options' => 'required|array', 
-            'options.*.option_number' => 'required|integer',
-            'options.*.content' => 'required|string',
-            'options.*.is_correct' => 'required|boolean',
+            'take_id' => 'required|integer|exists:takes,id',
+            'question_id' => 'required|integer|exists:quiz_questions,id',
+            'selected_option' => 'required|integer',
         ];
     }
 

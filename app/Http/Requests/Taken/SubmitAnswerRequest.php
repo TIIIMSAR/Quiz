@@ -22,10 +22,10 @@ class SubmitAnswerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'take_id' => 'required|exists:take,id',
-            'question_id' => 'required|exists:quiz_question,id',
-            'answers' => 'required|array',
-            'answers.*' => 'required|exists:options,id'
+           'take_id' => 'required',
+            'answers' => 'required', 
+            'answers.*.take_question_id' => 'required|integer',
+            'answers.*.answer' => 'required|integer', 
         ];
     }
 
