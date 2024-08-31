@@ -12,4 +12,21 @@ class Quiz_config extends Model
     protected $guarded = [
         'id'
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
+
+    public function getLevelAttribute($value)
+    {
+        $levels = [
+            1 => 'آسان',
+            2 => 'متوسط',
+            3 => 'سخت',
+        ];
+
+        return $levels[$value] ?? 'نامشخص';
+    }
 }

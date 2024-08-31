@@ -7,6 +7,9 @@ use App\Http\Requests\Azmmon\AzmmonConfigRequest;
 use App\Http\Requests\Azmmon\CreateAzmmonRequest;
 use App\Http\Requests\Azmmon\expireUrlAzmmonRequest;
 use App\Http\Requests\Azmmon\GenerateUrlAzmmonRequest;
+use App\Http\Resources\AzmmonDetailResource;
+use App\Http\Resources\AzmmonResource;
+use App\Http\Resources\UserResource;
 use App\Models\Owner;
 use App\Models\Quiz;
 use App\Models\Quiz_config;
@@ -19,57 +22,89 @@ class QuizController extends ApiController
 /**
  * Display a listing of the resource.
  */
-public function index($quizId)
-{
-    try {
-        $userId = Auth::id();
+    public function index()
+    {
+        try {
+            $userId = Auth::id();
 
-        $quizzes = Quiz::where('id', $quizId)->where('owner_id', $userId)->firstOrFail();
+            $quizzes = Quiz::where('owner_id', $userId)->get();
 
-        return $this->respondCreated('نمایش ازمون با موفقیت انجام شد.', $quizzes);  
-    } catch (ModelNotFoundException $e) {
-        return response()->json(['error' => 'آزمون مورد نظر پیدا نشد یا شما به آن دسترسی ندارید.'], 403);
-    } catch (\Throwable $e) {
-        return response()->json(['error' => 'خطایی در بازیابی آزمون‌ها رخ داد.'], 500);
+            return $this->respondCreated('نمایش آزمون‌ها با موفقیت انجام شد.', AzmmonResource::collection($quizzes));  
+
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'خطایی در بازیابی آزمون‌ها رخ داد.'], 500);
+        }
     }
-}
 
 
 
+    public function show($quizId)
+    {
+        try {
+            $userId = Auth::id();
 
-/**
- * Store a newly created resource in storage.
- */
-public function store(CreateAzmmonRequest $request)
-{
-    try {   
-        if (!Auth::check()) {
-            return response()->json(['error' => 'ابتدا باید وارد حساب کاربری خود شوید.'], 401);
+            $quizzes = Quiz::where('id', $quizId)
+                                ->where('owner_id', $userId)
+                                ->with('configs')
+                                ->firstOrFail();
+
+            return $this->respondCreated('نمایش ازمون با موفقیت انجام شد.', new AzmmonDetailResource($quizzes));  
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => 'آزمون مورد نظر پیدا نشد یا شما به آن دسترسی ندارید.'], 403);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'خطایی در بازیابی آزمون‌ها رخ داد.'], 500);
         }
-        $ownerExists = Owner::where('user_id', Auth::id())->exists();
+    }
 
-        if (!$ownerExists) {
-            Owner::create([
-                'user_id' => Auth::id(),
-            ]);
-        }
 
-        $quiz = Quiz::create([
-            'title' => $request->input('title'),
-            'summary' => $request->input('summary'),
-            'published' => $request->input('published'),
-            'score' => $request->input('score'),
-            'owner_id' => Auth::id(),
-        ]);
+    public function getQuizUserList(Request $request, $quizId)
+    {
+        $paginate = $request->input('paginate', 10); 
 
+        try {
+            $quiz = Quiz::findOrFail($quizId);
     
-        return $this->respondCreated('ازمون با موفقیت ساخته شد.', $quiz);
-
-    } catch (\Throwable $e) {
-        return $this->respondInternalError('خطایی در هنگام ایجاد آزمون رخ داد. لطفا دوباره تلاش کنید.',$e);
-        
+            $users = $quiz->users()->simplePaginate($paginate);
+    
+            return $this->respondCreated('لیست کاربران شرکت‌کننده با موفقیت بازیابی شد.', UserResource::collection($users)->response()->getData(true));
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['error' => 'آزمون مورد نظر پیدا نشد.'], 404);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'خطایی در بازیابی لیست کاربران رخ داد.'], 500);
+        }
     }
-}
+
+
+    public function store(CreateAzmmonRequest $request)
+    {
+        try {   
+            if (!Auth::check()) {
+                return response()->json(['error' => 'ابتدا باید وارد حساب کاربری خود شوید.'], 401);
+            }
+            $ownerExists = Owner::where('user_id', Auth::id())->exists();
+
+            if (!$ownerExists) {
+                Owner::create([
+                    'user_id' => Auth::id(),
+                ]);
+            }
+
+            $quiz = Quiz::create([
+                'title' => $request->input('title'),
+                'summary' => $request->input('summary'),
+                'published' => $request->input('published'),
+                'score' => $request->input('score'),
+                'owner_id' => Auth::id(),
+            ]);
+
+        
+            return $this->respondCreated('ازمون با موفقیت ساخته شد.', $quiz);
+
+        } catch (\Throwable $e) {
+            return $this->respondInternalError('خطایی در هنگام ایجاد آزمون رخ داد. لطفا دوباره تلاش کنید.',$e);
+            
+        }
+    }
 
 
 

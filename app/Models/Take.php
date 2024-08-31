@@ -29,4 +29,5 @@ class Take extends Model
     {
         return $this->hasMany(Take_question::class, 'take_id');
     }
+
 }
