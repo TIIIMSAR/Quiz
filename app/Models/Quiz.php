@@ -13,6 +13,7 @@ class Quiz extends Model
         'id'
     ];
 
+    protected $dates = ['start_at', 'finished_at'];
 
     public function owner()
     {

@@ -22,7 +22,10 @@ class AzmmonDetailResource extends JsonResource
             'url' => $this->url_quiz,
             'published' => $this->published ? 'Yes' : 'No',
             'score' => $this->score,
-            'createed_at' => $this->created_at,
+            'createed_at' => $this->created_at, 
+            // 'start_at' => $this->start_at->toDateTimeString(), // نمایش زمان شروع
+            // 'finished_at' => $this->finished_at->toDateTimeString(), // نمایش زمان پایان
+            // 'created_at' => $this->created_at->toDateTimeString(),
             'config' => QuizConfigResource::collection($this->whenLoaded('configs')),
         ];
     }

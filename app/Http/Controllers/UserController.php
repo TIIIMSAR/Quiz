@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Contract\ApiController;
 use App\Http\Requests\User\UpdateUserRequest;
+use App\Http\Resources\QuizDetailResource;
+use App\Http\Resources\QuizResource;
+use App\Models\Quiz;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -56,4 +59,38 @@ class UserController extends ApiController
             return $this->respondInternalError('خطایی در به‌روزرسانی کاربر رخ داده است');
         }
     }
+
+
+
+    public function getPublicAzmmon(Request $request)
+    {
+        $paginate = $request->input('paginate', 15); 
+
+        try {
+            $publicQuizzes = Quiz::where('published', true)
+                                ->simplePaginate($paginate);
+
+            return $this->respondCreated('آزمون‌های عمومی با موفقیت بازیابی شد.', QuizResource::collection($publicQuizzes)->response()->getData(true));
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'خطایی در بازیابی آزمون‌های عمومی رخ داد.'], 500);
+        }
+    }
+
+    public function getPublicAzmmonDetail($quizId)
+    {
+        try {
+            $publicQuiz = Quiz::with('configs')
+                            ->where('published', true)
+                            ->where('id', $quizId)
+                            ->firstOrFail();
+    
+            return $this->respondCreated('آزمون‌ با موفقیت بازیابی شد.', new QuizDetailResource($publicQuiz));
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'آزمون مورد نظر پیدا نشد یا عمومی نشده است.'], 404);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'خطایی در بازیابی آزمون رخ داد.'], 500);
+        }
+    }
+
 }

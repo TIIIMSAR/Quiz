@@ -7,12 +7,14 @@ use App\Http\Requests\Azmmon\AzmmonConfigRequest;
 use App\Http\Requests\Azmmon\CreateAzmmonRequest;
 use App\Http\Requests\Azmmon\expireUrlAzmmonRequest;
 use App\Http\Requests\Azmmon\GenerateUrlAzmmonRequest;
+use App\Http\Requests\Azmmon\startAzmmonRequest;
 use App\Http\Resources\AzmmonDetailResource;
 use App\Http\Resources\AzmmonResource;
 use App\Http\Resources\UserResource;
 use App\Models\Owner;
 use App\Models\Quiz;
 use App\Models\Quiz_config;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +23,8 @@ class QuizController extends ApiController
 {
 /**
  * Display a listing of the resource.
- */
+ */    
+        // نمایش همه ازمون ها به صورت خلاصه
     public function index()
     {
         try {
@@ -37,7 +40,7 @@ class QuizController extends ApiController
     }
 
 
-
+        // نمایش ازمون با تمام اطلاعات
     public function show($quizId)
     {
         try {
@@ -56,7 +59,7 @@ class QuizController extends ApiController
         }
     }
 
-
+        // کاربران شرکت کننده در ازمون
     public function getQuizUserList(Request $request, $quizId)
     {
         $paginate = $request->input('paginate', 10); 
@@ -74,7 +77,7 @@ class QuizController extends ApiController
         }
     }
 
-
+            // ساخت ازمون 
     public function store(CreateAzmmonRequest $request)
     {
         try {   
@@ -108,64 +111,93 @@ class QuizController extends ApiController
 
 
 
-
-
-private function generateUniqueQuizUrl($quizId)
-{
-        return url('/quiz/' . $quizId . '/' . uniqid());
-}
-
-
-
-
-
-public function regenerateQuizUrl(GenerateUrlAzmmonRequest $request)
-{
-    try {
-        $quizId = $request->input('quiz_id'); 
-        
-        $quiz = Quiz::findOrFail($quizId);
-        
-        if ($quiz->owner_id !== Auth::id()) {
-            return response()->json(['error' => 'شما اجازه این کار را ندارید.'], 403);
-        }
-
-        $quiz->url_quiz = $this->generateUniqueQuizUrl($quizId);
-        $quiz->save();
-
-        return response()->json(['message' => 'لینک آزمون با موفقیت بازتولید شد.', 'new_url' => $quiz->url_quiz]);
-    } catch (\Throwable $e) {
-        return $this->respondInternalError('خطایی در هنگام بازتولید لینک آزمون رخ داد.', $e);
+            //شروع ازمون از زمان فعلی
+    public function startQuiz(startAzmmonRequest $request)
+    {
+        $quizId = $request->input('quiz_id');
+        // try {
+            $quiz = Quiz::where('id', $quizId)->where('owner_id', Auth::id())->firstOrFail();
+    
+            if ($quiz->started_at !== null) {
+                return response()->json(['error' => 'این آزمون قبلاً شروع شده است.'], 400);
+            }
+    
+            $startAt = Carbon::now();
+    
+            $durationMinutes = $request->input('duration_minutes');
+            
+            if (!$durationMinutes || !is_numeric($durationMinutes)) {
+                return response()->json(['error' => 'لطفاً مدت زمان معتبر برای آزمون وارد کنید.'], 400);
+            }
+    
+            $finishedAt = $startAt->copy()->addMinutes($durationMinutes);
+    
+            $quiz->update([
+                'started_at' => $startAt,
+                'finished_at' => $finishedAt,
+            ]);
+    
+            return response()->json([
+                'message' => 'آزمون با موفقیت شروع شد.',
+                'started_at' => $startAt->toDateTimeString(),
+                'finished_at' => $finishedAt->toDateTimeString()
+            ], 200);
+    
+        // } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        //     return response()->json(['error' => 'آزمون مورد نظر پیدا نشد یا شما مجاز به شروع آن نیستید.'], 404);
+        // } catch (\Throwable $e) {
+        //     return response()->json(['error' => 'خطایی در شروع آزمون رخ داد.'], 500);
+        // }
     }
-}
 
-
-
-
-
-
-
-public function expireQuizUrl(expireUrlAzmmonRequest $request)
-{   
-    try {
-        $url = $request->input('url');
-        
-        $quiz = Quiz::where('url_quiz', $url)->firstOrFail();
-        
-        if ($quiz->owner_id !== Auth::id()) {
-            return response()->json(['error' => 'شما اجازه این کار را ندارید.'], 403);
-        }
-
-        $quiz->url_quiz = null;
-        $quiz->save();
-
-        return response()->json(['message' => 'لینک آزمون با موفقیت منقضی شد.']);
-    } catch (\Throwable $e) {
-        return $this->respondInternalError('{مطمعن شوید شناسه صحیح است}:خطایی در هنگام منقضی کردن لینک آزمون رخ داد.', $e);
+            // لینک ازمون
+    private function generateUniqueQuizUrl($quizId)
+    {
+            return url('/quiz/' . $quizId . '/' . uniqid());
     }
-}
+
+
+                // ساخت لینک ازمون
+    public function regenerateQuizUrl(GenerateUrlAzmmonRequest $request)
+    {
+        try {
+            $quizId = $request->input('quiz_id'); 
+            
+            $quiz = Quiz::findOrFail($quizId);
+            
+            if ($quiz->owner_id !== Auth::id()) {
+                return response()->json(['error' => 'شما اجازه این کار را ندارید.'], 403);
+            }
+
+            $quiz->url_quiz = $this->generateUniqueQuizUrl($quizId);
+            $quiz->save();
+
+            return response()->json(['message' => 'لینک آزمون با موفقیت بازتولید شد.', 'new_url' => $quiz->url_quiz]);
+        } catch (\Throwable $e) {
+            return $this->respondInternalError(' خطایی در هنگام بازتولید لینک آزمون رخ داد مطمعن شوید که مقادیر را به دسترسی ارسال کردید', $e);
+        }
+    }
 
 
 
+                // منقضی کردن لینک ازمون
+    public function expireQuizUrl(expireUrlAzmmonRequest $request)
+    {   
+        try {
+            $url = $request->input('url');
+            
+            $quiz = Quiz::where('url_quiz', $url)->firstOrFail();
+            
+            if ($quiz->owner_id !== Auth::id()) {
+                return response()->json(['error' => 'شما اجازه این کار را ندارید.'], 403);
+            }
 
+            $quiz->url_quiz = null;
+            $quiz->save();
+
+            return response()->json(['message' => 'لینک آزمون با موفقیت منقضی شد.']);
+        } catch (\Throwable $e) {
+            return $this->respondInternalError('{مطمعن شوید شناسه صحیح است}:خطایی در هنگام منقضی کردن لینک آزمون رخ داد.', $e);
+        }
+    }
 }

@@ -6,8 +6,9 @@ use App\Http\Controllers\Contract\ApiController;
 use App\Http\Requests\Category\CreateCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
-use Illuminate\Http\Request;
+use App\Models\Owner;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
@@ -23,9 +24,18 @@ class CategoryController extends ApiController
          }
      }
  
+
      public function store(CreateCategoryRequest $request)
      {
-        //  try {
+        $ownerExists = Owner::where('user_id', Auth::id())->exists();
+
+        if (!$ownerExists) {
+            Owner::create([
+                'user_id' => Auth::id(),
+            ]);
+        }
+
+         try {
              $request->validated();
  
              $category = new Category();
@@ -34,13 +44,14 @@ class CategoryController extends ApiController
              $category->save();
  
              return $this->respondCreated('دسته‌بندی با موفقیت ایجاد شد.', $category);
-        //  } catch (ValidationException $e) {
-        //      return $this->respondInternalError('اطلاعات وارد شده معتبر نمی‌باشند.');
-        //  } catch (\Exception $e) {
-        //      return $this->respondInternalError('خطایی در ایجاد دسته‌بندی رخ داده است.');
-        //  }
+         } catch (ValidationException $e) {
+             return $this->respondInternalError('اطلاعات وارد شده معتبر نمی‌باشند.');
+         } catch (\Exception $e) {
+             return $this->respondInternalError('خطایی در ایجاد دسته‌بندی رخ داده است.');
+         }
      }
  
+     
      public function update(UpdateCategoryRequest $request, $id)
      {
          try {

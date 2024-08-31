@@ -25,7 +25,7 @@ class CreateAzmmonRequest extends FormRequest
             'title' => ['required', 'string', 'min:3', 'max:128'],
             'summary' => ['required', 'string', 'min:8', 'max:128'],
             'score' => ['required'],
-            'published' => ['required']
+            'published' => ['required'],
         ];
     }
 
