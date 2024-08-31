@@ -16,9 +16,10 @@ use App\Models\Take_answer;
 use App\Models\Take_question;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TakeController extends ApiController
-{
+{ 
     public function startQuiz(createTakeRequest $request)
     {
         try {
@@ -26,17 +27,23 @@ class TakeController extends ApiController
 
             $userId = auth()->user()->id;
             $quizId = $validated['quiz_id'];
-    
-            $quiz = Quiz::find($quizId);
+            
+            DB::beginTransaction(); 
+
+            $quiz = Quiz::findOrFail($quizId);
             if (!$quiz) {
                 return response()->json(['error' => 'آزمون یافت نشد.'], 404);
             }
     
             $take = Take::create([
-                'user_id' => $userId,
+                'user_id' => $userId,       
                 'quiz_id' => $quizId,
                 'started_at' => Carbon::now(),
             ]);
+
+            $this->generateTakeQuestions($take->id);
+
+            DB::commit();
 
             return $this->respondCreated('ازمون شروع شد', $take);            
         } catch (\Throwable $th) {
@@ -46,26 +53,60 @@ class TakeController extends ApiController
 
 
 
-// برسی شود
-    public function getQuestions(createTakeRequest $request)
+        //نمایش سوالات ازمون
+   public function generateTakeQuestions($takeId)
     {
-        $validated = $request->validated();
-
-        $quizId = $validated['quiz_id'];
-
-        $questions = Quiz_question::where('quiz_id', $quizId)
-            ->inRandomOrder()
-            ->get();
-
-        return response()->json(['questions' => $questions], 200);
+        $take = Take::findOrFail($takeId);
+        $quizId = $take->quiz_id;
+        $userId = $take->user_id;
+                
+        $quizConfigs = Quiz_config::where('quiz_id', $quizId)->get();
+                
+        foreach ($quizConfigs as $config) {
+            $questions = Quiz_question::where('category_id', $config->category_id)
+                                    ->where('level', $config->level)
+                                    // ->where('active', 1)
+                                    ->inRandomOrder()
+                                    ->take($config->number_questions)
+                                    ->get();
+    
+            foreach ($questions as $question) {
+                Take_question::create([
+                    'user_id' => $userId,
+                    'quiz_question_id' => $question->id,
+                    'take_id' => $takeId,
+                ]);
+            }
+        }
     }
 
     
-public function store(CreateOptionQuizRequest $request)
+
+    //رندم سازی و سوالات بعدی
+    function getNextQuestionForUser($takeId, $userId)
+    {
+        $unansweredQuestions = Take_question::where('take_id', $takeId)
+                                            ->where('user_id', $userId)
+                                            ->whereDoesntHave('takeAnswer')
+                                            ->inRandomOrder()
+                                            ->get();
+    
+        if ($unansweredQuestions->isNotEmpty()) {
+            $nextQuestion = $unansweredQuestions->first();
+            return $nextQuestion->question;
+        }
+    
+        return response()->json(['message' => 'سوال دیگری برای این آزمون باقی نمانده است.'], 200);
+    }
+
+
+
+
+public function submitAnswer(CreateOptionQuizRequest $request)
 {
     $request->validated();
     
-    // try {
+    try {
         $takeId = $request->input('take_id');
         $questionId = $request->input('question_id');
         $takeQuestionId = $request->input('take_question_id');
@@ -98,29 +139,14 @@ public function store(CreateOptionQuizRequest $request)
 
         return $this->respondCreated('جواب ابا موفقیت ارسال شد.', $takeAnswer);
 
-    // } catch (\Exception $e) {
-    //     return $this->respondInternalError('خطایی در ثبت پاسخ کاربر به وجود امد', $e);
-    // }
+    } catch (\Exception $e) {
+        return $this->respondInternalError('خطایی در ثبت پاسخ کاربر به وجود امد', $e);
+    }
 }
 
-    // function storeAnswer($takeId, $questionId, $selectedOption)
-    // {
-    //     $takeAnswer = Take_answer::firstOrCreate(
-    //         ['take_id' => $takeId],
-    //         ['answers' => json_encode([])]
-    //     );
-    
-    //     $currentAnswers = $takeAnswer->answers;
-    
-    //     $currentAnswers["question_$questionId"] = [
-    //         'question_id' => $questionId,
-    //         'selected_option' => $selectedOption,
-    //     ];
-    
-    //     $takeAnswer->update(['answers' => $currentAnswers]);
-    
-    //     return $takeAnswer;
-    // }
+
+
+
 
     public function endQuiz(endTakeRequest $request)
     {
@@ -159,6 +185,10 @@ public function store(CreateOptionQuizRequest $request)
     }
 
 
+
+
+
+    // score calculation
     private function calculateTotalScore(Take $take)
     {
         $totalScore = 0;

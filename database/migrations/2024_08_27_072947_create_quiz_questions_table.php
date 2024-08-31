@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('content');
             $table->tinyInteger('level');
             $table->tinyInteger('score');
-            $table->boolean('active')->nullable();
+            $table->boolean('active')->default(1);
             $table->json('options');
             $table->string('file_path')->nullable();
 

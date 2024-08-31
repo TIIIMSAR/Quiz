@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\QuizConfigController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\QuizQuestionController;
 use App\Http\Controllers\SearchController;
@@ -40,9 +41,9 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     Route::group(['prefix' => '/azmmon'], function () {
         Route::get('/{id}', [QuizController::class, 'index']);
         Route::post('/create', [QuizController::class, 'store']);
-        Route::post('/config', [QuizController::class, 'config']);
-        Route::get('/show-config/{id}', [QuizController::class, 'showQuizConfig']);
 
+        Route::post('/config', [QuizConfigController::class, 'createConfig']);
+        Route::get('/show-config/{id}', [QuizConfigController::class, 'showQuizConfig']);
 
         Route::post('/generate_url', [QuizController::class, 'regenerateQuizUrl']);
         Route::post('/expire_url', [QuizController::class, 'expireQuizUrl']);
@@ -64,8 +65,14 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     Route::group(['prefix' => '/take'], function () {
         Route::post('/start', [TakeController::class, 'startQuiz']);
         Route::post('/finished', [TakeController::class, 'endQuiz']);
-        Route::post('/submit-answer', [TakeController::class, 'store']);
+        Route::post('/submit-answer', [TakeController::class, 'submitAnswer']);
 
         Route::post('', [TakeController::class, 'getQuestions']);
     });
+
+    Route::group(['prefix' => '/page'], function () {
+        Route::get('show-category', [CategoryController::class, 'index']);
+        Route::get('show-all-questions', [QuizQuestionController::class, 'index']);
+        Route::get('show-detail-question/{id}', [QuizQuestionController::class, 'show']);
+    }); 
 });

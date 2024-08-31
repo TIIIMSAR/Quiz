@@ -19,6 +19,11 @@ class Quiz_question extends Model
     ];
 
 
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
     const LEVEL_EASY = 1;
     const LEVEL_MEDIUM = 2;
     const LEVEL_HARD = 3;
