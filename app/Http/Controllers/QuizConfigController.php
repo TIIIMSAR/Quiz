@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Contract\ApiController;
 use App\Http\Requests\Azmmon\AzmmonConfigRequest;
+use App\Http\Resources\QuizConfigResource;
 use App\Models\Quiz;
 use App\Models\Quiz_config;
 use Illuminate\Http\Request;
@@ -47,29 +48,29 @@ class QuizConfigController extends ApiController
 
 
 
-public function showQuizConfig($quizId)
-{
-    $quiz = Quiz::find($quizId);
-    // dd($quiz);
-    if (!$quiz) {
-        return response()->json(['error' => 'آزمون مورد نظر یافت نشد.'], 404);
+    public function showQuizConfig($quizId)
+    {
+        $quiz = Quiz::find($quizId);
+        // dd($quiz);
+        if (!$quiz) {
+            return response()->json(['error' => 'آزمون مورد نظر یافت نشد.'], 404);
+        }
+
+        $quizConfig = Quiz_config::where('quiz_id', $quizId)->get();
+
+        if (!$quizConfig) {
+            return response()->json(['error' => 'تنظیمات برای آزمون مورد نظر یافت نشد.'], 404);
+        }
+
+        $userId = auth()->user()->id;
+        
+        $isOwner = ($quiz->owner_id === $userId);
+        
+        if (!$isOwner) {
+            return response()->json(['error' => 'دسترسی غیرمجاز'], 403);
+        }
+
+            return $this->respondSuccess('کانفیگ ها با موفقیت پیدا شدند.', QuizConfigResource::collection($quizConfig));
     }
-
-    $quizConfig = Quiz_config::where('quiz_id', $quizId)->first();
-
-    if (!$quizConfig) {
-        return response()->json(['error' => 'تنظیمات برای آزمون مورد نظر یافت نشد.'], 404);
-    }
-
-    $userId = auth()->user()->id;
-    
-    $isOwner = ($quiz->owner_id === $userId);
-    
-    if (!$isOwner) {
-        return response()->json(['error' => 'دسترسی غیرمجاز'], 403);
-    }
-
-        return $this->respondSuccess('کانفیگ ها با موفقیت پیدا شدند.', $quizConfig);
-}
 
 }
