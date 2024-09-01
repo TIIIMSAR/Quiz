@@ -115,7 +115,7 @@ class QuizController extends ApiController
     public function startQuiz(startAzmmonRequest $request)
     {
         $quizId = $request->input('quiz_id');
-        // try {
+        try {
             $quiz = Quiz::where('id', $quizId)->where('owner_id', Auth::id())->firstOrFail();
     
             if ($quiz->started_at !== null) {
@@ -135,6 +135,7 @@ class QuizController extends ApiController
             $quiz->update([
                 'started_at' => $startAt,
                 'finished_at' => $finishedAt,
+                'status' => Quiz::STATUS_STARTED,
             ]);
     
             return response()->json([
@@ -143,11 +144,11 @@ class QuizController extends ApiController
                 'finished_at' => $finishedAt->toDateTimeString()
             ], 200);
     
-        // } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-        //     return response()->json(['error' => 'آزمون مورد نظر پیدا نشد یا شما مجاز به شروع آن نیستید.'], 404);
-        // } catch (\Throwable $e) {
-        //     return response()->json(['error' => 'خطایی در شروع آزمون رخ داد.'], 500);
-        // }
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'آزمون مورد نظر پیدا نشد یا شما مجاز به شروع آن نیستید.'], 404);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'خطایی در شروع آزمون رخ داد.'], 500);
+        }
     }
 
             // لینک ازمون
@@ -155,6 +156,22 @@ class QuizController extends ApiController
     {
             return url('/quiz/' . $quizId . '/' . uniqid());
     }
+
+
+                // چک کردن اینکه ایا زمان ازمون تموم شده یا ن
+        public function checkAndFinishQuizzes()
+    {
+        $now = Carbon::now();
+
+        $quizzes = Quiz::where('status', Quiz::STATUS_STARTED)
+                        ->where('finished_at', '<=', $now)
+                        ->get();
+
+        foreach ($quizzes as $quiz) {
+            $quiz->update(['status' => Quiz::STATUS_FINISHED]);
+        }
+    }
+
 
 
                 // ساخت لینک ازمون
@@ -172,7 +189,7 @@ class QuizController extends ApiController
             $quiz->url_quiz = $this->generateUniqueQuizUrl($quizId);
             $quiz->save();
 
-            return response()->json(['message' => 'لینک آزمون با موفقیت بازتولید شد.', 'new_url' => $quiz->url_quiz]);
+            return response()->json(['message' => 'لینک آزمون با موفقیت تولید شد.', 'new_url' => $quiz->url_quiz]);
         } catch (\Throwable $e) {
             return $this->respondInternalError(' خطایی در هنگام بازتولید لینک آزمون رخ داد مطمعن شوید که مقادیر را به دسترسی ارسال کردید', $e);
         }

@@ -13,6 +13,11 @@ class Quiz extends Model
         'id'
     ];
 
+    const STATUS_CREATED = 1; 
+    const STATUS_STARTED = 2; 
+    const STATUS_FINISHED = 3; 
+
+
     protected $dates = ['start_at', 'finished_at'];
 
     public function owner()

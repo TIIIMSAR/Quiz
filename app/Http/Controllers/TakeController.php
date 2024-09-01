@@ -22,18 +22,31 @@ class TakeController extends ApiController
 { 
     public function startQuiz(createTakeRequest $request)
     {
+        // dd('test');
+        $validated = $request->validated();
         try {
-            $validated = $request->validated();
-
             $userId = auth()->user()->id;
             $quizId = $validated['quiz_id'];
             
             DB::beginTransaction(); 
 
             $quiz = Quiz::findOrFail($quizId);
-            if (!$quiz) {
-                return response()->json(['error' => 'آزمون یافت نشد.'], 404);
+
+                    // برسی اینکه ایا ازمون شروع شده یا خیر
+            if ($quiz->status !== 2) {
+                return response()->json(['error' => 'آزمون هنوز شروع نشده است یا قبلاً پایان یافته است.'], 403);
             }
+    
+            $currentTime = Carbon::now();
+            if ($currentTime->lt($quiz->started_at)) 
+                return response()->json(['error' => 'آزمون هنوز شروع نشده است.'], 403);
+                
+                if ($currentTime->gt($quiz->finished_at)) 
+                    return response()->json(['error' => 'آزمون پایان یافته است.'], 403);
+                
+                    if (!$quiz) 
+                        return response()->json(['error' => 'آزمون یافت نشد.'], 404);
+                
     
             $take = Take::create([
                 'user_id' => $userId,       
@@ -57,11 +70,12 @@ class TakeController extends ApiController
    public function generateTakeQuestions($takeId)
     {
         $take = Take::findOrFail($takeId);
+        // dd($take);
         $quizId = $take->quiz_id;
         $userId = $take->user_id;
                 
         $quizConfigs = Quiz_config::where('quiz_id', $quizId)->get();
-                
+                dd($quizConfigs);
         foreach ($quizConfigs as $config) {
             $questions = Quiz_question::where('category_id', $config->category_id)
                                     ->where('level', $config->level)
@@ -69,7 +83,7 @@ class TakeController extends ApiController
                                     ->inRandomOrder()
                                     ->take($config->number_questions)
                                     ->get();
-    
+    dd($questions);
             foreach ($questions as $question) {
                 Take_question::create([
                     'user_id' => $userId,

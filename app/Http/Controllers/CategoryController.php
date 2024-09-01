@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Contract\ApiController;
 use App\Http\Requests\Category\CreateCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
+use App\Http\Resources\CategoryshowResource;
 use App\Models\Category;
 use App\Models\Owner;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -16,12 +17,12 @@ class CategoryController extends ApiController
 {
      public function index()
      {
-         try {
+        //  try {
              $categories = Category::where('owner_id', Auth::id())->get();
-             return $this->respondSuccess('دسته‌بندی‌ها با موفقیت دریافت شدند.', $categories);
-         } catch (\Exception $e) {
-             return $this->respondInternalError('خطایی در دریافت دسته‌بندی‌ها رخ داده است.');
-         }
+             return $this->respondSuccess('دسته‌بندی‌ها با موفقیت دریافت شدند.', CategoryshowResource::collection($categories));
+        //  } catch (\Exception $e) {
+        //      return $this->respondInternalError('خطایی در دریافت دسته‌بندی‌ها رخ داده است.');
+        //  }
      }
  
 
@@ -51,7 +52,7 @@ class CategoryController extends ApiController
          }
      }
  
-     
+
      public function update(UpdateCategoryRequest $request, $id)
      {
          try {

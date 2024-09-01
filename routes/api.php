@@ -67,8 +67,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::post('/start', [TakeController::class, 'startQuiz']);
         Route::post('/finished', [TakeController::class, 'endQuiz']);
         Route::post('/submit-answer', [TakeController::class, 'submitAnswer']);
-
-        Route::post('', [TakeController::class, 'getQuestions']);
+        Route::post('get-questions/{takeId}', [TakeController::class, 'generateTakeQuestions']);
     });
 
     Route::group(['prefix' => '/page'], function () {
