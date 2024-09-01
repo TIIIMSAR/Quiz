@@ -18,11 +18,7 @@ return new class extends Migration
             ->constrained()
             ->onDelete('cascade')
             ->onUpdate('cascade');
-
-            $table->foreignId('take_question_id')
-            ->constrained()
-            ->onDelete('cascade')
-            ->onUpdate('cascade');
+                
 
             $table->json('answers')->nullable();
 

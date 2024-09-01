@@ -36,4 +36,9 @@ class Quiz_question extends Model
         return $levels[$value] ?? 'نامشخص';
     }
 
+    public function configs()
+    {
+        return $this->belongsToMany(Quiz_config::class, 'quiz_config_question', 'question_id', 'quiz_config_id');
+    }
+
 }

@@ -23,9 +23,10 @@ class AzmmonConfigRequest extends FormRequest
     {
         return [
             'quiz_id' => 'required|exists:quizzes,id',
-            'category_id' => 'required|exists:categories,id',
-            'number_question' => 'required|integer|min:1',
-            'level' => 'required|integer|min:1',
+            'configs' => 'required|array|min:1',
+            'configs.*.category_id' => 'required|exists:categories,id',
+            'configs.*.level' => 'required|integer|min:1|max:3', 
+            'configs.*.number_questions' => 'required|integer|min:1',
         ];
     }
 

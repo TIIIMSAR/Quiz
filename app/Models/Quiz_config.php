@@ -29,4 +29,11 @@ class Quiz_config extends Model
 
         return $levels[$value] ?? 'نامشخص';
     }
+
+
+    public function questions()
+    {
+        return $this->hasMany(Quiz_question::class, 'category_id', 'category_id')
+                    ->where('level', $this->level);
+    }
 }

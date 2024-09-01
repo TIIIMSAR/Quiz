@@ -30,4 +30,10 @@ class Take extends Model
         return $this->hasMany(Take_question::class, 'take_id');
     }
 
+
+    public function questions()
+    {
+        return $this->hasMany(Take_question::class);
+    }
+
 }

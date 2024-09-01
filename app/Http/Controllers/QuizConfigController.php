@@ -11,36 +11,37 @@ use Illuminate\Http\Request;
 class QuizConfigController extends ApiController
 {
     
-public function createConfig(AzmmonConfigRequest $request)
-{
-    $validator = $request->validated();
+    public function createConfig(AzmmonConfigRequest $request)
+    {
+        $validator = $request->validated();
 
-    // try {
         $quizId = $request->input('quiz_id');
-        $categoryId = $request->input('category_id');
-        $numberQuestions = $request->input('number_question');
-        $level = $request->input('level');
+        $configs = $request->input('configs');
 
         $quiz = Quiz::find($quizId);
         if (!$quiz) {
             return response()->json(['error' => 'آزمون مورد نظر یافت نشد.'], 404);
         }
 
-        $quizConfig = Quiz_config::updateOrCreate(
-            ['quiz_id' => $quizId],
-            [
-                'category_id' => $categoryId,
-                'number_question' => $numberQuestions,
-                'level' => $level,
-            ]
-        );
+        $createdConfigs = [];
 
-        return $this->respondSuccess('تنظیمات با موفقیت اعمال شد.', $quizConfig);
+        foreach ($configs as $config) {
+            $quizConfig = Quiz_config::updateOrCreate(
+                [
+                    'quiz_id' => $quizId,
+                    'category_id' => $config['category_id'], 
+                    'level' => $config['level'],
+                ],
+                [
+                    'number_question' => $config['number_questions'],
+                ]
+            );
 
-    // } catch (\Exception $e) {
-    //     return $this->respondInternalError('تنظیمات شما با خطا رو به شد');
-    // }
-}
+            $createdConfigs[] = $quizConfig;
+        }
+
+        return $this->respondSuccess('تنظیمات با موفقیت اعمال شد.', $createdConfigs);
+    }
 
 
 

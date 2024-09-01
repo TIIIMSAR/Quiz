@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use \Log;
 use App\Http\Controllers\Contract\ApiController;
 use App\Http\Requests\Quiz\CreateOptionQuizRequest;
 use App\Http\Requests\Taken\createTakeRequest;
@@ -66,35 +67,40 @@ class TakeController extends ApiController
 
 
 
-        //نمایش سوالات ازمون
-   public function generateTakeQuestions($takeId)
+    //نمایش سوالات ازمون
+    public function generateTakeQuestions($takeId)
     {
         $take = Take::findOrFail($takeId);
-        // dd($take);
         $quizId = $take->quiz_id;
         $userId = $take->user_id;
-                
+            // dd($take);
         $quizConfigs = Quiz_config::where('quiz_id', $quizId)->get();
-                dd($quizConfigs);
+// dd($quizConfigs);
+        $questionIds = [];
+
         foreach ($quizConfigs as $config) {
             $questions = Quiz_question::where('category_id', $config->category_id)
-                                    ->where('level', $config->level)
-                                    // ->where('active', 1)
+                                    // ->where('level', $config->level)
                                     ->inRandomOrder()
-                                    ->take($config->number_questions)
+                                    ->take($config->number_question)
                                     ->get();
-    dd($questions);
+
             foreach ($questions as $question) {
-                Take_question::create([
-                    'user_id' => $userId,
-                    'quiz_question_id' => $question->id,
-                    'take_id' => $takeId,
-                ]);
+                $questionIds[] = $question->id;
             }
         }
+
+        Take_question::create([
+            'user_id' => $userId,
+            'take_id' => $takeId,
+            'questions' => json_encode($questionIds), // تبدیل آرایه به JSON و ذخیره آن
+        ]);
+
+        return $this->respondSuccess('سوالات آزمون با موفقیت ایجاد و ذخیره شدند.', $questionIds);
     }
 
     
+            
 
     //رندم سازی و سوالات بعدی
     function getNextQuestionForUser($takeId, $userId)
