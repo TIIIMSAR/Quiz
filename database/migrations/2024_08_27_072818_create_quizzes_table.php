@@ -25,6 +25,7 @@ return new class extends Migration
             $table->tinyInteger('score')->default(60);
             $table->tinyInteger('status')->default(1);
             $table->tinyInteger('published');
+            $table->string('meta');
             $table->timestamp('started_at')->nullable();
             $table->timestamp('finished_at')->nullable();
 

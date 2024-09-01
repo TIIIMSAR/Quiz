@@ -67,7 +67,7 @@ class TakeController extends ApiController
 
 
 
-    //نمایش سوالات ازمون
+        // ذخیره سوالات به صورت رندم و نمایش ان به کاربر
     public function generateTakeQuestions($takeId)
     {
         $take = Take::findOrFail($takeId);
@@ -85,96 +85,83 @@ class TakeController extends ApiController
                                     ->where('level', $levelValue)
                                     ->inRandomOrder()
                                     ->take($config->number_question)
-                                    ->get();
+                                    ->pluck('id')
+                                    ->toArray();
 
-            foreach ($questions as $question) {
-                $questionIds[] = $question->id;
-            }
+           $questionIds = array_merge($questionIds, $questions);
         }
 
         Take_question::create([
             'user_id' => $userId,
             'take_id' => $takeId,
-            'questions' => json_encode($questionIds), // تبدیل آرایه به JSON و ذخیره آن
+            'questions' => json_encode($questionIds),
         ]);
 
-        return $this->respondSuccess('سوالات آزمون با موفقیت ایجاد و ذخیره شدند.', $questionIds);
-    }
 
-    
-            
+                // نمایش سوالات ذخیره شده
+        $questions = Quiz_question::whereIn('id', $questionIds)
+                                    ->simplePaginate(1);
 
-    //رندم سازی و سوالات بعدی
-    function getNextQuestionForUser($takeId, $userId)
-    {
-        $unansweredQuestions = Take_question::where('take_id', $takeId)
-                                            ->where('user_id', $userId)
-                                            ->whereDoesntHave('takeAnswer')
-                                            ->inRandomOrder()
-                                            ->get();
-    
-        if ($unansweredQuestions->isNotEmpty()) {
-            $nextQuestion = $unansweredQuestions->first();
-            return $nextQuestion->question;
+        if ($questions->isEmpty()) {
+            return $this->endQuiz($takeId);
         }
-    
-        return response()->json(['message' => 'سوال دیگری برای این آزمون باقی نمانده است.'], 200);
+
+        return response()->json($questions);
     }
 
 
 
 
-public function submitAnswer(CreateOptionQuizRequest $request)
-{
-    $request->validated();
-    
-    try {
-        $takeId = $request->input('take_id');
-        $questionId = $request->input('question_id');
-        $takeQuestionId = $request->input('take_question_id');
-        $selectedOption = $request->input('selected_option');
-
-            //find or create a new    
-        $takeAnswer = Take_answer::firstOrCreate(
-            ['take_id' => $takeId],
-            ['take_question_id' => $takeQuestionId],
-            ['answers' => json_encode([])]
-        );
+            // ثبت گزینه های شرکت کننده 
+    public function submitAnswer(CreateOptionQuizRequest $request)
+    {
+        $request->validated();
         
-        $currentAnswers = $takeAnswer->answers;
+        try {
+            $takeId = $request->input('take_id');
+            $questionId = $request->input('question_id');
+            $takeQuestionId = $request->input('take_question_id');
+            $selectedOption = $request->input('selected_option');
 
-            // json_decode => array
-        if (is_string($currentAnswers)) {
-            $currentAnswers = json_decode($currentAnswers, true);
-    
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $currentAnswers = [];
+                //find or create a new    
+            $takeAnswer = Take_answer::firstOrCreate(
+                ['take_id' => $takeId],
+                ['take_question_id' => $takeQuestionId],
+                ['answers' => json_encode([])]
+            );
+            
+            $currentAnswers = $takeAnswer->answers;
+
+                // json_decode => array
+            if (is_string($currentAnswers)) {
+                $currentAnswers = json_decode($currentAnswers, true);
+        
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $currentAnswers = [];
+                }
             }
+                    //add new question
+            $currentAnswers[] = [
+                'question_id' => $questionId,
+                'selected_option' => $selectedOption,
+            ];
+
+            $takeAnswer->update(['answers' => $currentAnswers]);
+
+            return $this->respondCreated('جواب ابا موفقیت ارسال شد.', $takeAnswer);
+
+        } catch (\Exception $e) {
+            return $this->respondInternalError('خطایی در ثبت پاسخ کاربر به وجود امد', $e);
         }
-                //add new question
-        $currentAnswers[] = [
-            'question_id' => $questionId,
-            'selected_option' => $selectedOption,
-        ];
-
-        $takeAnswer->update(['answers' => $currentAnswers]);
-
-        return $this->respondCreated('جواب ابا موفقیت ارسال شد.', $takeAnswer);
-
-    } catch (\Exception $e) {
-        return $this->respondInternalError('خطایی در ثبت پاسخ کاربر به وجود امد', $e);
     }
-}
 
 
 
 
-
-    public function endQuiz(endTakeRequest $request)
+            // پایان ازمون
+    public function endQuiz($takeId)
     {
-        $validated = $request->validated();
-
-        $takeId = $validated['take_id'];
+        // $validated = $request->validated();
         $take = Take::find($takeId);
 
         if (!$take) {
@@ -199,11 +186,22 @@ public function submitAnswer(CreateOptionQuizRequest $request)
         } else {
             $take->status = 'failed';
         }
-
-        $take->user_score = $totalScore;
+        
+        $take->score = $totalScore;
         $take->save();
 
-        return response()->json(['message' => 'آزمون به پایان رسید.', 'status' => $take->status, 'score' => $totalScore], 200);
+
+        $startTime = Carbon::parse($take->started_at);
+        $endTime = Carbon::parse($take->finished_at);
+        $duration = $endTime->diff($startTime);
+    
+        return response()->json([
+            'message' => 'آزمون به پایان رسید.',
+            'status' => $take->status,
+            'score' => $totalScore,
+            'time_taken' => $duration->format('%H:%I:%S')
+        ], 200);
+
     }
 
 
