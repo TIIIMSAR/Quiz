@@ -25,15 +25,15 @@ class Quiz_question extends Model
     }
 
 
-    public function getLevelAttribute($value)
+    public static function getLevelValue($level)
     {
         $levels = [
-            1 => 'آسان',
-            2 => 'متوسط',
-            3 => 'سخت',
+            'آسان' => 1,
+            'متوسط' => 2,
+            'سخت' => 3,
         ];
 
-        return $levels[$value] ?? 'نامشخص';
+        return $levels[$level] ?? null;
     }
 
     public function configs()

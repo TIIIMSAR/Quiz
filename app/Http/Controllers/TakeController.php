@@ -73,14 +73,16 @@ class TakeController extends ApiController
         $take = Take::findOrFail($takeId);
         $quizId = $take->quiz_id;
         $userId = $take->user_id;
-            // dd($take);
+            
         $quizConfigs = Quiz_config::where('quiz_id', $quizId)->get();
-// dd($quizConfigs);
+
         $questionIds = [];
 
         foreach ($quizConfigs as $config) {
+                $levelValue = Quiz_question::getLevelValue($config->level);
+
             $questions = Quiz_question::where('category_id', $config->category_id)
-                                    // ->where('level', $config->level)
+                                    ->where('level', $levelValue)
                                     ->inRandomOrder()
                                     ->take($config->number_question)
                                     ->get();
