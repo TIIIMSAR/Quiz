@@ -28,6 +28,9 @@ return new class extends Migration
             $table->tinyInteger('status')->nullable();
             $table->tinyInteger('user_score')->nullable();
 
+            $table->json('questions')->nullable();
+            $table->json('answers')->nullable();
+
             $table->timestamp('started_at');
             $table->timestamp('finished_at')->nullable();
 

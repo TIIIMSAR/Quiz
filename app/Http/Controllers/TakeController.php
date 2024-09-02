@@ -23,7 +23,6 @@ class TakeController extends ApiController
 { 
     public function startQuiz(createTakeRequest $request)
     {
-        // dd('test');
         $validated = $request->validated();
         try {
             $userId = auth()->user()->id;

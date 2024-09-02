@@ -20,8 +20,9 @@ class QuizQuestionController extends ApiController
     {
         $categoryName = $request->input('category_name');
         $searchTerm = $request->input('search');
+        $paginate = $request->input('paginate');
         $ownerId = auth()->user()->id;
-
+    
         try {       
             $query = Quiz_question::whereHas('category', function($query) use ($ownerId, $categoryName) {
                 $query->where('owner_id', $ownerId);
@@ -35,7 +36,7 @@ class QuizQuestionController extends ApiController
                 $query->where('content', 'LIKE', "%{$searchTerm}%");
             }
     
-            $questions = $query->get();
+            $questions = $query->simplePaginate($paginate ?? 10);
     
             return QuizQuestionResource::collection($questions);
         } catch (\Throwable $e) {

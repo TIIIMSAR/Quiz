@@ -15,6 +15,7 @@ class QuizQuestionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'category_name' => $this->category->name,
             'content' => $this->content,
             'level' => $this->level,

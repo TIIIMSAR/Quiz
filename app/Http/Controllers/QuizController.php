@@ -80,7 +80,7 @@ class QuizController extends ApiController
             // ساخت ازمون 
     public function store(CreateAzmmonRequest $request)
     {
-        // try {   
+    try { 
             if (!Auth::check()) {
                 return response()->json(['error' => 'ابتدا باید وارد حساب کاربری خود شوید.'], 401);
             }
@@ -103,9 +103,9 @@ class QuizController extends ApiController
         
             return $this->respondCreated('ازمون با موفقیت ساخته شد.', $quiz);
 
-        // } catch (\Throwable $e) {
-        //     return $this->respondInternalError('خطایی در هنگام ایجاد آزمون رخ داد. لطفا دوباره تلاش کنید.',$e);    
-        // }
+        } catch (\Throwable $e) {
+            return $this->respondInternalError('خطایی در هنگام ایجاد آزمون رخ داد. لطفا دوباره تلاش کنید.',$e);    
+        }
     }
 
 
