@@ -90,11 +90,9 @@ class TakeController extends ApiController
            $questionIds = array_merge($questionIds, $questions);
         }
 
-        Take_question::create([
-            'user_id' => $userId,
-            'take_id' => $takeId,
-            'questions' => json_encode($questionIds),
-        ]);
+        $take->questions = json_encode($questionIds);
+        $take->started_at = now();
+        $take->save();
 
 
                 // نمایش سوالات ذخیره شده
@@ -114,43 +112,40 @@ class TakeController extends ApiController
             // ثبت گزینه های شرکت کننده 
     public function submitAnswer(CreateOptionQuizRequest $request)
     {
-        $request->validated();
-        
         try {
-            $takeId = $request->input('take_id');
-            $questionId = $request->input('question_id');
-            $takeQuestionId = $request->input('take_question_id');
-            $selectedOption = $request->input('selected_option');
-
-                //find or create a new    
-            $takeAnswer = Take_answer::firstOrCreate(
-                ['take_id' => $takeId],
-                ['take_question_id' => $takeQuestionId],
-                ['answers' => json_encode([])]
-            );
+            $takeId = $request->json('take_id');
+            $answers = $request->json('answers');
             
-            $currentAnswers = $takeAnswer->answers;
-
-                // json_decode => array
-            if (is_string($currentAnswers)) {
-                $currentAnswers = json_decode($currentAnswers, true);
-        
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    $currentAnswers = [];
+            $take = Take::findOrFail($takeId);
+    
+            $currentAnswers = $take->answers;
+    
+            if (is_null($currentAnswers) || !is_array($currentAnswers)) {
+                $currentAnswers = [];
+            }
+    
+            foreach ($answers as $answer) {
+                $questionId = $answer['question_id'];
+                $selectedOption = $answer['selected_option'];
+    
+                $existingAnswerKey = array_search($questionId, array_column($currentAnswers, 'question_id'));
+    
+                if ($existingAnswerKey !== false) {
+                    $currentAnswers[$existingAnswerKey]['selected_option'] = $selectedOption;
+                } else {
+                    $currentAnswers[] = [
+                        'question_id' => $questionId,
+                        'selected_option' => $selectedOption,
+                    ];
                 }
             }
-                    //add new question
-            $currentAnswers[] = [
-                'question_id' => $questionId,
-                'selected_option' => $selectedOption,
-            ];
-
-            $takeAnswer->update(['answers' => $currentAnswers]);
-
-            return $this->respondCreated('جواب ابا موفقیت ارسال شد.', $takeAnswer);
-
+    
+            $take->update(['answers' => $currentAnswers]);
+    
+            return $this->respondCreated('جواب با موفقیت ارسال شد.', $take);
+    
         } catch (\Exception $e) {
-            return $this->respondInternalError('خطایی در ثبت پاسخ کاربر به وجود امد', $e);
+            return $this->respondInternalError('خطایی در ثبت پاسخ کاربر به وجود آمد', $e);
         }
     }
 
@@ -160,11 +155,10 @@ class TakeController extends ApiController
             // پایان ازمون
     public function endQuiz($takeId)
     {
-        // $validated = $request->validated();
         $take = Take::find($takeId);
 
         if (!$take) {
-            return response()->json(['error' => 'آزمون یافت نشد.'], 404);
+            return response()->json(['error' => 'take یافت نشد.'], 404);
         }
 
         $quiz = Quiz::find($take->quiz_id);
@@ -179,11 +173,11 @@ class TakeController extends ApiController
         $passPercentage = $quiz->score;
 
         if (Carbon::now()->greaterThan($quiz->finished_at)) {
-            $take->status = 'late';
+            $take->status = Take::STATUS_LATE;
         } else if ($totalScore >= $passPercentage) {
-            $take->status = 'passed';
+            $take->status = Take::STATUS_PASSED;
         } else {
-            $take->status = 'failed';
+            $take->status = Take::STATUS_FAILED;
         }
         
         $take->score = $totalScore;
@@ -196,44 +190,44 @@ class TakeController extends ApiController
     
         return response()->json([
             'message' => 'آزمون به پایان رسید.',
-            'status' => $take->status,
+            'status' => Take::getStatusText($take->status),
             'score' => $totalScore,
             'time_taken' => $duration->format('%H:%I:%S')
-        ], 200);
+        ], 200);    
 
     }
 
 
 
 
-
-    // score calculation
+    // محاسبه نمره کاربر 
     private function calculateTotalScore(Take $take)
-    {
-        $totalScore = 0;
+{
+    $totalScore = 0;
 
-        $questions = Take_question::where('take_id', $take->id)->get();
-        foreach ($questions as $takeQuestion) {
-            $quizQuestion = Quiz_question::find($takeQuestion->question_id);
+    $answers = json_decode($take->answers, true);
 
-            if ($quizQuestion) {
-                $correctAnswers = Correct_answers::where('question_id', $takeQuestion->question_id)
-                                                ->pluck('correct_option_id')
-                                                ->toArray();
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $answers = [];
+    }
 
-                $userAnswers = Take_answer::where('take_question_id', $takeQuestion->id)
-                                         ->pluck('option_id')
-                                         ->toArray();
+    $userAnswers = collect($answers)->pluck('selected_option', 'question_id')->toArray();
 
-                if (array_intersect($correctAnswers, $userAnswers) == $correctAnswers) {
-                    $totalScore += $quizQuestion->score;
-                }
+    $questionIds = json_decode($take->questions, true); 
+
+    $questions = Quiz_question::whereIn('id', $questionIds)->get();
+
+        foreach ($questions as $quizQuestion) {
+            $options = $quizQuestion->options;
+
+            $correctOption = collect($options)->firstWhere('is_correct', true);
+            if (isset($userAnswers[$quizQuestion->id]) && $userAnswers[$quizQuestion->id] == $correctOption['option_number']) {
+                $totalScore += $quizQuestion->score;
             }
         }
 
-        return $totalScore;
-    }
-
+    return $totalScore;
+} 
 }
 
 

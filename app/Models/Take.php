@@ -15,6 +15,24 @@ class Take extends Model
     ];
 
 
+
+    const STATUS_LATE = 1;
+    const STATUS_PASSED = 2;
+    const STATUS_FAILED = 3;
+
+    public static function getStatusText($status)
+    {
+        $statuses = [
+            self::STATUS_LATE => 'شما دیر کردید ازمون به پایان رسیده است',
+            self::STATUS_PASSED => 'ازمون در زمان درست ثبت شد',
+            self::STATUS_FAILED => 'ازمون شکست خورد',
+        ];
+
+        return $statuses[$status] ?? 'Unknown';
+    }
+
+
+
     public function user()
     {
         return $this->belongsTo(User::class);

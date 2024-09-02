@@ -23,8 +23,8 @@ class CreateOptionQuizRequest extends FormRequest
     {
         return [
             'take_id' => 'required|integer|exists:takes,id',
-            'question_id' => 'required|integer|exists:quiz_questions,id',
-            'selected_option' => 'required|integer',
+            'answers*question_id' => 'required|integer',
+            'answers*selected_option' => 'required|integer',
         ];
     }
 
