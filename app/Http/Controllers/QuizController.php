@@ -10,6 +10,7 @@ use App\Http\Requests\Azmmon\GenerateUrlAzmmonRequest;
 use App\Http\Requests\Azmmon\startAzmmonRequest;
 use App\Http\Resources\AzmmonDetailResource;
 use App\Http\Resources\AzmmonResource;
+use App\Http\Resources\QuizDetailResource;
 use App\Http\Resources\UserResource;
 use App\Models\Owner;
 use App\Models\Quiz;
@@ -153,7 +154,7 @@ class QuizController extends ApiController
             // لینک ازمون
     private function generateUniqueQuizUrl($quizId)
     {
-            return url('/quiz/' . $quizId . '/' . uniqid());
+            return url('/api/quiz/' . $quizId . '/' . uniqid());
     }
 
 
@@ -216,4 +217,27 @@ class QuizController extends ApiController
             return $this->respondInternalError('{مطمعن شوید شناسه صحیح است}:خطایی در هنگام منقضی کردن لینک آزمون رخ داد.', $e);
         }
     }
+
+
+    public function showQuizLinK($quizId, $uniqueId)
+    {
+        $quiz = Quiz::with('configs')
+        ->where('id', $quizId)
+        ->where('url_quiz', 'like', "%$uniqueId")
+        ->first();
+
+        if (!$quiz) {
+        return response()->json(['error' => 'آزمون مورد نظر یافت نشد.'], 404);
+        }
+
+        // if ($quiz->status == Quiz::STATUS_FINISHED) {
+        // return response()->json(['error' => 'این آزمون منقضی شده است.'], 410);
+        // }
+
+        return $this->respondSuccess('', new QuizDetailResource($quiz));
+
+    }
+    
+    
 }
+ 

@@ -18,6 +18,7 @@ Route::fallback(function(){
 });
 
 Route::get('/search', [SearchController::class, 'search'])->middleware('auth:sanctum');
+Route::get('/quiz/{quizId}/{uniqueId}', [QuizController::class, 'showQuizLinK']);
 
 
 Route::post('/register', [AuthController::class, 'register']);
