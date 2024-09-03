@@ -24,8 +24,8 @@ class Take extends Model
     {
         $statuses = [
             self::STATUS_LATE => 'شما دیر کردید ازمون به پایان رسیده است',
-            self::STATUS_PASSED => 'ازمون در زمان درست ثبت شد',
-            self::STATUS_FAILED => 'ازمون شکست خورد',
+            self::STATUS_PASSED => 'شما نمره قبولی را کسب کردید',
+            self::STATUS_FAILED => 'شما مردود شدید',
         ];
 
         return $statuses[$status] ?? 'Unknown';

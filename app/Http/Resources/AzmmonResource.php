@@ -15,8 +15,10 @@ class AzmmonResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'title' => $this->title,
             'summary' => $this->summary,
+            'status' => $this->status_text,
             'published' => $this->published ? 'Yes' : 'No',
         ];
     }

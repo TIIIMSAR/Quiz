@@ -27,14 +27,18 @@ class TakeController extends ApiController
         try {
             $userId = auth()->user()->id;
             $quizId = $validated['quiz_id'];
-            
+        
             DB::beginTransaction(); 
 
             $quiz = Quiz::findOrFail($quizId);
 
                     // برسی اینکه ایا ازمون شروع شده یا خیر
-            if ($quiz->status !== 2) {
-                return response()->json(['error' => 'آزمون هنوز شروع نشده است یا قبلاً پایان یافته است.'], 403);
+            if ($quiz->status == 1) {
+                return response()->json(['error' => 'آزمون هنوز شروع نشده است.'], 403);
+            }
+
+            if ($quiz->status == 3) {
+                return response()->json(['error' => 'آزمون قبلاً پایان یافته است.'], 403);
             }
     
             $currentTime = Carbon::now();
@@ -53,7 +57,7 @@ class TakeController extends ApiController
                 'quiz_id' => $quizId,
                 'started_at' => Carbon::now(),
             ]);
-
+// dd($take->id);
             $this->generateTakeQuestions($take->id);
 
             DB::commit();
@@ -72,7 +76,7 @@ class TakeController extends ApiController
         $take = Take::findOrFail($takeId);
         $quizId = $take->quiz_id;
         $userId = $take->user_id;
-            
+              
         $quizConfigs = Quiz_config::where('quiz_id', $quizId)->get();
 
         $questionIds = [];
@@ -156,22 +160,24 @@ class TakeController extends ApiController
     public function endQuiz($takeId)
     {
         $take = Take::find($takeId);
-
+    
         if (!$take) {
             return response()->json(['error' => 'take یافت نشد.'], 404);
         }
-
+    
         $quiz = Quiz::find($take->quiz_id);
         if (!$quiz) {
             return response()->json(['error' => 'آزمون یافت نشد.'], 404);
         }
-
+    
         $take->finished_at = Carbon::now();
         $take->save();
+    
+        [$totalScore, $correctAnswerPercentage] = $this->calculateTotalScore($take);
 
-        $totalScore = $this->calculateTotalScore($take);
         $passPercentage = $quiz->score;
 
+    
         if (Carbon::now()->greaterThan($quiz->finished_at)) {
             $take->status = Take::STATUS_LATE;
         } else if ($totalScore >= $passPercentage) {
@@ -179,55 +185,59 @@ class TakeController extends ApiController
         } else {
             $take->status = Take::STATUS_FAILED;
         }
-        
+    
         $take->score = $totalScore;
         $take->save();
+    
 
-
-        $startTime = Carbon::parse($take->started_at);
-        $endTime = Carbon::parse($take->finished_at);
-        $duration = $endTime->diff($startTime);
     
         return response()->json([
-            'message' => 'آزمون به پایان رسید.',
+            'message' => 'آزمون با موفقیت پایان رسید.',
             'status' => Take::getStatusText($take->status),
             'score' => $totalScore,
-            'time_taken' => $duration->format('%H:%I:%S')
-        ], 200);    
-
+            'pass_percentage' => $passPercentage,
+            'correct_answer_percentage' => round($correctAnswerPercentage, 2),
+            'started_at' => $take->started_at, 
+            'finished_at' => $take->finished_at,
+        ], 200);
     }
+    
 
 
 
 
-    // محاسبه نمره کاربر 
+          // محاسبه نمره کاربر و درصد پاسخ درست کاربر 
     private function calculateTotalScore(Take $take)
-{
-    $totalScore = 0;
-
-    $answers = json_decode($take->answers, true);
-
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        $answers = [];
-    }
-
-    $userAnswers = collect($answers)->pluck('selected_option', 'question_id')->toArray();
-
-    $questionIds = json_decode($take->questions, true); 
-
-    $questions = Quiz_question::whereIn('id', $questionIds)->get();
-
+    {
+        $totalScore = 0;
+        $correctAnswers = 0;
+    
+        $answers = json_decode($take->answers, true);
+    
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $answers = [];
+        }
+    
+        $userAnswers = collect($answers)->pluck('selected_option', 'question_id')->toArray();
+        $questionIds = json_decode($take->questions, true); 
+        $questions = Quiz_question::whereIn('id', $questionIds)->get();
+    
         foreach ($questions as $quizQuestion) {
             $options = $quizQuestion->options;
-
             $correctOption = collect($options)->firstWhere('is_correct', true);
+    
             if (isset($userAnswers[$quizQuestion->id]) && $userAnswers[$quizQuestion->id] == $correctOption['option_number']) {
                 $totalScore += $quizQuestion->score;
+                $correctAnswers++;
             }
         }
 
-    return $totalScore;
-} 
+                // محاصبه درصد درست سوالات
+        $totalQuestions = count($questionIds);
+        $correctAnswerPercentage = ($totalQuestions > 0) ? ($correctAnswers / $totalQuestions) * 100 : 0;
+
+        return [$totalScore, $correctAnswerPercentage];
+    }
 }
 
 

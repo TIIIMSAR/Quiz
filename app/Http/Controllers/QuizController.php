@@ -121,6 +121,11 @@ class QuizController extends ApiController
             if ($quiz->started_at !== null) {
                 return response()->json(['error' => 'این آزمون قبلاً شروع شده است.'], 400);
             }
+                
+            $quizSettingsCount = $quiz->configs()->count(); 
+            if ($quizSettingsCount == 0) {
+                return response()->json(['error' => 'این آزمون هیچ تنظیماتی ندارد و نمی‌تواند شروع شود.'], 400);
+            }
     
             $startAt = Carbon::now();
     

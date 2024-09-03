@@ -26,7 +26,9 @@ class createQuestionRequest extends FormRequest
             'content' => ['required'],
             'level' => ['required'],
             'score' => ['required'],
-            'options' => ['required'],
+            'options' => ['required', 'min:2', 'max:10', 
+                'options.*' => ['required', 'string', 'max:255'],
+            ],
        ];
     }
 }

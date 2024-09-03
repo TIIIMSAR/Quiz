@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -22,10 +23,10 @@ class AzmmonDetailResource extends JsonResource
             'url' => $this->url_quiz,
             'published' => $this->published ? 'Yes' : 'No',
             'score' => $this->score,
+            'status' => $this->status_text,
             'createed_at' => $this->created_at, 
-            // 'start_at' => $this->start_at->toDateTimeString(), // نمایش زمان شروع
-            // 'finished_at' => $this->finished_at->toDateTimeString(), // نمایش زمان پایان
-            // 'created_at' => $this->created_at->toDateTimeString(),
+            'start_at' => $this->started_at ? Carbon::parse($this->started_at)->toDateTimeString() : 'Not Set',
+            'finished_at' => $this->finished_at ? Carbon::parse($this->finished_at)->toDateTimeString() : 'Not Set',
             'config' => QuizConfigResource::collection($this->whenLoaded('configs')),
         ];
     }

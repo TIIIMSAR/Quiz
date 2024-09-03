@@ -13,10 +13,30 @@ class Quiz extends Model
         'id'
     ];
 
+
+    protected $casts = [
+        'start_at' => 'datetime',
+        'finished_at' => 'datetime',
+    ];
+
     const STATUS_CREATED = 1; 
     const STATUS_STARTED = 2; 
     const STATUS_FINISHED = 3; 
 
+
+    public function getStatusTextAttribute()
+    {
+        switch ($this->status) {
+            case 1:
+                return 'آزمون ساخته شده است';
+            case 2:
+                return 'آزمون شروع شده است';
+            case 3:
+                return 'آزمون پایان یافته است';
+            default:
+                return 'وضعیت نامشخص';
+        }
+    }
 
     protected $dates = ['start_at', 'finished_at'];
 
