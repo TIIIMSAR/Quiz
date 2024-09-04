@@ -22,7 +22,7 @@ class GenerateUrlAzmmonRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'quiz_id' => ['required'],
+            'quiz_id' => ['required', 'integer'],
         ];
     }
 

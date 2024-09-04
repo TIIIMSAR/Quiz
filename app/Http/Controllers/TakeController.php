@@ -51,13 +51,23 @@ class TakeController extends ApiController
                     if (!$quiz) 
                         return response()->json(['error' => 'آزمون یافت نشد.'], 404);
                 
-    
+
+                        // برسی اینکه کاربر فقط یک بار شرکت کرده باشد 
+        $existingTake = Take::where('user_id', $userId)
+        ->where('quiz_id', $quizId)
+        ->first();
+
+        if ($existingTake) {
+        return response()->json(['error' => 'شما قبلاً در این آزمون شرکت کرده‌اید.'], 403);
+        }
+
+
+
             $take = Take::create([
                 'user_id' => $userId,       
                 'quiz_id' => $quizId,
                 'started_at' => Carbon::now(),
             ]);
-// dd($take->id);
             $this->generateTakeQuestions($take->id);
 
             DB::commit();

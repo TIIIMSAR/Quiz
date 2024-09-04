@@ -22,8 +22,8 @@ class startAzmmonRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'quiz_id' => ['required'],
-            'duration_minutes' => ['required']
+            'quiz_id' => ['required', 'integer'],
+            'duration_minutes' => ['required', 'integer']
         ];
     }
 }

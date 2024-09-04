@@ -22,7 +22,7 @@ class SubmitAnswerRequest extends FormRequest
     public function rules(): array
     {
         return [
-           'take_id' => 'required',
+           'take_id' => 'required|integer',
             'answers' => 'required', 
             'answers.*.take_question_id' => 'required|integer',
             'answers.*.answer' => 'required|integer', 

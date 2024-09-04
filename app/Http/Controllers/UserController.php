@@ -6,7 +6,10 @@ use App\Http\Controllers\Contract\ApiController;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Resources\QuizDetailResource;
 use App\Http\Resources\QuizResource;
+use App\Http\Resources\UserQuizResource;
 use App\Models\Quiz;
+use App\Models\Take;
+use App\Models\Quiz_question;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -91,6 +94,86 @@ class UserController extends ApiController
         } catch (\Throwable $e) {
             return response()->json(['error' => 'خطایی در بازیابی آزمون رخ داد.'], 500);
         }
+   }
+
+
+
+    public function getUserQuizSummary()
+    {
+        $userId = auth()->user()->id;
+
+        $takes = Take::where('user_id', $userId)
+                    ->with('quiz')
+                    ->get();
+
+        $summary = $takes->map(function($take) {
+            return [
+                'id' => $take->id,
+                'quiz-id' => $take->quiz->id,
+                'quiz-title' => $take->quiz->title ?? 'عنوان ثبت نشده',
+                'score' => $take->score,
+                'status' => Take::getStatusText($take->status),
+            ];
+        });
+
+        return response()->json($summary);
+    }
+
+
+
+
+    public function getQuizDetails($quizId)
+    {
+        $userId = auth()->user()->id;
+    
+        $quiz = Quiz::findOrFail($quizId);
+    
+        $take = Take::where('user_id', $userId)
+                    ->where('quiz_id', $quizId)
+                    ->firstOrFail();
+    
+        $questions = json_decode($take->questions, true);
+        $answers = json_decode($take->answers, true);
+    
+        $answeredQuestions = Quiz_question::whereIn('id', $questions)->get();
+    
+        $result = [
+            'owner' => [
+                'owner_name' => $quiz->owner->name,
+                'owner_email' => $quiz->owner->email
+            ],
+            'quiz_title' => $quiz->title,
+            'quiz_summary' => $quiz->summary,
+            'published' => $quiz->published ? 'ازمون عمومی' : 'ازمون خصوصی',
+            'status_time' => $quiz->status_text,
+            'passing_azmmon_score' => $quiz->score,
+            'user_score' => $take->score,
+            'status' => Take::getStatusText($take->status),
+            'questions' => []
+        ];
+    
+        foreach ($answeredQuestions as $question) {
+            // پیدا کردن پاسخ کاربر برای سوال فعلی
+            $userAnswer = null;
+            foreach ($answers as $answer) {
+                if ($answer['question_id'] == $question->id) {
+                    $userAnswer = $answer['selected_option'];
+                    break;
+                }
+            }
+    
+            $result['questions'][] = [
+                'id' => $question->id,
+                'question_content' => $question->content,
+                'question_category_name' => $question->category->name,
+                'question_level' => $question->level,
+                'question_scoer' => $question->score,
+                'user_answer' => $userAnswer !== null ? $userAnswer : 'پاسخ داده نشده',
+                'options' => $question->options
+            ];
+        }
+    
+        return response()->json($result, 200);
     }
 
 }

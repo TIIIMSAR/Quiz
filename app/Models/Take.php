@@ -28,7 +28,7 @@ class Take extends Model
             self::STATUS_FAILED => 'شما مردود شدید',
         ];
 
-        return $statuses[$status] ?? 'Unknown';
+        return $statuses[$status] ?? 'وضعیت ثبت نشده است';
     }
 
 
