@@ -8,6 +8,7 @@ use App\Http\Requests\Azmmon\CreateAzmmonRequest;
 use App\Http\Requests\Azmmon\expireUrlAzmmonRequest;
 use App\Http\Requests\Azmmon\GenerateUrlAzmmonRequest;
 use App\Http\Requests\Azmmon\startAzmmonRequest;
+use App\Http\Requests\Azmmon\StoptAzmmonRequest;
 use App\Http\Resources\AzmmonDetailResource;
 use App\Http\Resources\AzmmonResource;
 use App\Http\Resources\QuizDetailResource;
@@ -155,6 +156,48 @@ class QuizController extends ApiController
             return response()->json(['error' => 'خطایی در شروع آزمون رخ داد.'], 500);
         }
     }
+
+
+
+
+
+    public function stopQuiz(StoptAzmmonRequest $request)
+    {
+        // try {
+
+            $quizId = $request->json('quiz_id');
+
+            $quiz = Quiz::findOrFail($quizId);
+    
+            if (auth()->user()->id !== $quiz->owner_id) {
+                return response()->json(['message' => 'شما مجاز به توقف این آزمون نیستید.'], 403);
+            }
+    
+            if ($quiz->status !== Quiz::STATUS_STARTED) {
+                return response()->json(['message' => 'آزمون در حال حاضر فعال نیست و نمی‌توان آن را متوقف کرد.'], 400);
+            }
+    
+            $quiz->status = Quiz::STATUS_STOPPED;
+            $quiz->finished_at = now();
+            $quiz->save();
+    
+            return response()->json([
+                'message' => 'آزمون با موفقیت متوقف شد.',
+                'quiz' => [
+                    'id' => $quiz->id,
+                    'title' => $quiz->title,
+                    'status' => $quiz->status_text,
+                    'finished_at' => $quiz->finished_at,
+                ]
+            ], 200);
+        // } catch (\Exception $e) {
+        //     return response()->json(['message' => 'خطایی رخ داده است. لطفاً دوباره تلاش کنید.'], 500);
+        // }
+    }
+
+
+
+
 
             // لینک ازمون
     private function generateUniqueQuizUrl($quizId)

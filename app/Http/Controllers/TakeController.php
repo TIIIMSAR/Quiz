@@ -40,6 +40,10 @@ class TakeController extends ApiController
             if ($quiz->status == 3) {
                 return response()->json(['error' => 'آزمون قبلاً پایان یافته است.'], 403);
             }
+
+            if ($quiz->status == 4) {
+                return response()->json(['error' => 'آزمون متوقف شده است.'], 403);
+            }
     
             $currentTime = Carbon::now();
             if ($currentTime->lt($quiz->started_at)) 

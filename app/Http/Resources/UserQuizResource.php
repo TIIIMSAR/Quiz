@@ -19,7 +19,6 @@ class UserQuizResource extends JsonResource
             'id' => $this->id,
             'quiz_title' => $this->quiz->title,
             'score' => $this->score,
-            dd('test')
         ];
     }
 }

@@ -43,7 +43,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::get('/{id}', [QuizController::class, 'show']);
         Route::post('/create', [QuizController::class, 'store']);
         Route::put('/start', [QuizController::class, 'startQuiz']);
-
+        Route::put('/stop', [QuizController::class, 'stopQuiz']);
+        
         Route::post('/config', [QuizConfigController::class, 'createConfig']);
         Route::get('/show-config/{id}', [QuizConfigController::class, 'showQuizConfig']);
 
@@ -80,6 +81,6 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::get('show-all-azmmon-public', [UserController::class, 'getPublicAzmmon']);
         Route::get('show-detail-azmmon-public/{idQuiz}', [UserController::class, 'getPublicAzmmonDetail']);
         Route::get('show-all-azmmon-results', [UserController::class, 'getUserQuizSummary']);
-        Route::get('show-all-azmmon-results-datail/{quizId}', [UserController::class, 'getQuizDetails']);
+        Route::get('show-azmmon-results-datail/{quizId}', [UserController::class, 'getQuizDetails']);
     }); 
 });

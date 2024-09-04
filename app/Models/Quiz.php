@@ -22,6 +22,7 @@ class Quiz extends Model
     const STATUS_CREATED = 1; 
     const STATUS_STARTED = 2; 
     const STATUS_FINISHED = 3; 
+    const STATUS_STOPPED = 4; 
 
 
     public function getStatusTextAttribute()
@@ -33,6 +34,8 @@ class Quiz extends Model
                 return 'آزمون شروع شده است';
             case 3:
                 return 'آزمون پایان یافته است';
+            case 4:
+                return 'ازمون متوقف شده است';
             default:
                 return 'وضعیت نامشخص';
         }

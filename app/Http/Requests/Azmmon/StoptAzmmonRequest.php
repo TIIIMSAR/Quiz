@@ -4,7 +4,7 @@ namespace App\Http\Requests\Azmmon;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class startAzmmonRequest extends FormRequest
+class StoptAzmmonRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,11 +23,9 @@ class startAzmmonRequest extends FormRequest
     {
         return [
             'quiz_id' => ['required', 'integer'],
-            'duration_minutes' => ['required', 'integer']
         ];
     }
 
-    
 
     protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
     {
@@ -43,4 +41,5 @@ class startAzmmonRequest extends FormRequest
             ], 422)
         );
     }
+
 }

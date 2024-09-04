@@ -18,6 +18,7 @@ class QuizResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'summary' => $this->summary,
+            'status' => $this->status_text,
             'score' => $this->score,
             'published' => $this->published ? 'Yes' : 'No',
             'owner' => $this->owner->name,
