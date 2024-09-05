@@ -51,8 +51,17 @@ class UserController extends ApiController
     {        
         try {
             $validated = $request->validated();
-            
+    
+            if (auth()->user()->id != $id) {
+                return $this->respondInternalError('شما مجاز به به‌روزرسانی این کاربر نیستید');
+            }
+    
             $user = User::findOrFail($id);
+    
+            if (User::where('email', $validated['email'])->where('id', '!=', $id)->exists()) {
+                return $this->respondInternalError('ایمیل وارد شده قبلاً استفاده شده است');
+            }
+    
             $user->update($validated);
     
             return $this->respondSuccess('کاربر با موفقیت به‌روزرسانی شد', $user);

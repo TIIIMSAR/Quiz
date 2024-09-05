@@ -78,6 +78,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::get('show-detail-question/{id}', [QuizQuestionController::class, 'show']);
         Route::get('show-all-azmmon', [QuizController::class, 'index']);
         Route::get('show-all-azmmon-user/{idQuiz}', [QuizController::class, 'getQuizUserList']);
+        Route::get('show-detail-azmmon-user/{idQuiz}', [QuizController::class, 'getParticipantsDetails']);
         Route::get('show-all-azmmon-public', [UserController::class, 'getPublicAzmmon']);
         Route::get('show-detail-azmmon-public/{idQuiz}', [UserController::class, 'getPublicAzmmonDetail']);
         Route::get('show-all-azmmon-results', [UserController::class, 'getUserQuizSummary']);

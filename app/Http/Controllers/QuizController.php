@@ -2,24 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
+use App\Models\Quiz;
+use App\Models\Take;
+use App\Models\Owner;
+use App\Models\Quiz_config;
+use Illuminate\Http\Request;
+use App\Models\Quiz_question;
+use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\AzmmonResource;
+use App\Http\Resources\QuizDetailResource;
+use App\Http\Resources\AzmmonDetailResource;
 use App\Http\Controllers\Contract\ApiController;
+use App\Http\Requests\Azmmon\startAzmmonRequest;
+use App\Http\Requests\Azmmon\StoptAzmmonRequest;
 use App\Http\Requests\Azmmon\AzmmonConfigRequest;
 use App\Http\Requests\Azmmon\CreateAzmmonRequest;
 use App\Http\Requests\Azmmon\expireUrlAzmmonRequest;
 use App\Http\Requests\Azmmon\GenerateUrlAzmmonRequest;
-use App\Http\Requests\Azmmon\startAzmmonRequest;
-use App\Http\Requests\Azmmon\StoptAzmmonRequest;
-use App\Http\Resources\AzmmonDetailResource;
-use App\Http\Resources\AzmmonResource;
-use App\Http\Resources\QuizDetailResource;
-use App\Http\Resources\UserResource;
-use App\Models\Owner;
-use App\Models\Quiz;
-use App\Models\Quiz_config;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class QuizController extends ApiController
 {
@@ -78,6 +80,74 @@ class QuizController extends ApiController
             return response()->json(['error' => 'خطایی در بازیابی لیست کاربران رخ داد.'], 500);
         }
     }
+
+
+                // نمایش کاربران شرکت کرده با جزیات
+        public function getParticipantsDetails($quizId)
+    {
+        try {
+            $quiz = Quiz::findOrFail($quizId);
+
+            if (auth()->user()->id !== $quiz->owner_id) {
+                return response()->json(['message' => 'شما مجاز به مشاهده جزئیات این آزمون نیستید.'], 403);
+            }
+
+            // پیدا کردن شرکت‌کنندگان و اطلاعات آزمون
+            $takes = Take::where('quiz_id', $quizId)->get();
+
+            $participants = [];
+            
+            foreach ($takes as $take) {
+                $questions = json_decode($take->questions, true);
+                $answers = json_decode($take->answers, true);
+
+                $answeredQuestions = Quiz_question::whereIn('id', $questions)->get();
+
+                $participantDetails = [
+                    'user_id' => $take->user_id,
+                    'user_name' => $take->user->name,
+                    'user_email' => $take->user->email,
+                    'user_score' => $take->score,
+                    'status' => Take::getStatusText($take->status),
+                    'questions' => []
+                ];
+
+                foreach ($answeredQuestions as $question) {
+                    // پیدا کردن پاسخ کاربر برای سوال فعلی
+                    $userAnswer = null;
+                    foreach ($answers as $answer) {
+                        if ($answer['question_id'] == $question->id) {
+                            $userAnswer = $answer['selected_option'];
+                            break;
+                        }
+                    }
+
+                    $participantDetails['questions'][] = [
+                        'id' => $question->id,
+                        'question_content' => $question->content,
+                        'question_category_name' => $question->category->name,
+                        'question_level' => $question->level,
+                        'question_score' => $question->score,
+                        'user_answer' => $userAnswer !== null ? $userAnswer : 'پاسخ داده نشده',
+                        'options' => $question->options
+                    ];
+                }
+
+                $participants[] = $participantDetails;
+            }
+
+            return response()->json([
+                'quiz_title' => $quiz->title,
+                'quiz_summary' => $quiz->summary,
+                'published' => $quiz->published ? 'ازمون عمومی' : 'ازمون خصوصی',
+                'participants' => $participants
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'خطایی رخ داده است. لطفاً دوباره تلاش کنید.'], 500);
+        }
+    }
+
 
             // ساخت ازمون 
     public function store(CreateAzmmonRequest $request)
@@ -163,7 +233,7 @@ class QuizController extends ApiController
 
     public function stopQuiz(StoptAzmmonRequest $request)
     {
-        // try {
+        try {
 
             $quizId = $request->json('quiz_id');
 
@@ -190,9 +260,9 @@ class QuizController extends ApiController
                     'finished_at' => $quiz->finished_at,
                 ]
             ], 200);
-        // } catch (\Exception $e) {
-        //     return response()->json(['message' => 'خطایی رخ داده است. لطفاً دوباره تلاش کنید.'], 500);
-        // }
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'خطایی رخ داده است. لطفاً دوباره تلاش کنید.'], 500);
+        }
     }
 
 
